@@ -42,7 +42,7 @@ exam = Assessment("demo-macro-2026";
     ],
     session_key = "demo-session-key-2026")
 
-#%% code id=header hidecode
+#%% code id=header
 # Carries the runtime and the styling for every other widget — keep it first.
 exam_header(exam)
 

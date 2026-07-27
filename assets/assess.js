@@ -298,7 +298,10 @@
   function refreshAll() { Object.keys(QUESTION_ELS).forEach(refreshQuestion); }
 
   /* ── header: identity gate, countdown, live tally ──────────────────────────── */
+  var HEADER_EL = null;                       // kept so `reset()` can rebuild the identity form
+
   function mountHeader(root) {
+    HEADER_EL = root;
     root.className = "sa-header";
     root.innerHTML = "";
 
@@ -608,7 +611,29 @@
     },
 
     // Escape hatch for an invigilator: read the current state from the browser console.
-    _state: function () { return { config: CFG, state: STATE, counts: CFG ? counts() : null }; }
+    _state: function () { return { config: CFG, state: STATE, counts: CFG ? counts() : null }; },
+
+    /* Wipe everything and start over — identity, answers, and the countdown's start stamp.
+     *
+     * This exists for AUTHORING. While writing a paper you re-run it constantly, and the persistence
+     * that makes the clock tamper-resistant for a candidate (the start time survives reloads, and
+     * un-confirming deliberately does not clear it) otherwise leaves you with no way back to a fresh
+     * paper short of clearing localStorage by hand.
+     *
+     * It grants a candidate nothing they did not already have: anyone who can open a console can clear
+     * localStorage directly. Which is the honest position on the timer generally — in a design with no
+     * server, the countdown is a courtesy to the candidate, not an enforcement mechanism. What actually
+     * evidences timing is `started_at`/`submitted_at` in the SIGNED submission, read against the
+     * wall-clock window the sitting was invigilated over. */
+    reset: function () {
+      try { localStorage.removeItem(storeKey()); } catch (e) {}
+      STATE.identity = {}; STATE.answers = {};
+      STATE.confirmed = false; STATE.startedAt = null; STATE.expired = false;
+      if (HEADER_EL) mountHeader(HEADER_EL);       // rebuild the form so the input boxes clear too
+      refreshAll();
+      notify();
+      return "SlateAssess: reset";
+    }
   };
 
   window.SlateAssess = API;

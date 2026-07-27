@@ -85,6 +85,22 @@ See `notebooks/demo_exam.jl` for a working five-question paper with a live chart
   A flagged question is recorded as unanswered — the submission panel says so explicitly.
 - Answers are written to `localStorage` on every change, so a crash or accidental reload does not cost
   the candidate their paper.
+- With a `duration` set, the header counts down from the candidate's **first** confirmation and locks
+  the paper at zero. The start stamp is persisted, so reloading does not hand back extra time, and
+  re-opening the identity form to fix a typo does not reset the clock.
+
+> **The countdown is a courtesy, not an enforcement mechanism.** With no server there is nothing
+> authoritative to time against, and anyone who can open a browser console can clear the stored state.
+> What actually evidences timing is `started_at` / `submitted_at` in the *signed* submission, read
+> against the wall-clock window the sitting was invigilated over.
+
+While **authoring**, that persistence is simply in the way — an expired clock from a test run leaves the
+paper locked with no route back. Reset it from the console:
+
+```js
+SlateAssess.reset()      // clears identity, answers and the start stamp
+SlateAssess._state()     // inspect what the paper currently holds
+```
 - The submission is offered both as a **download** and as **copy-out text**, because a locked-down
   browser may refuse downloads. The copy box is not a nicety; it is the fallback that keeps the paper
   submittable.
