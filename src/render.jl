@@ -45,6 +45,7 @@ function _config(a::Assessment)
         "questions" => a.questions,
         "choices" => a.choices,
         "no_response" => a.no_response,
+        "show_no_response" => a.show_no_response,
         "flag" => a.flag,
         "identity" => [Dict{String,Any}("key" => String(f.key), "label" => f.label,
                                         "required" => f.required, "pattern" => f.pattern,
@@ -114,6 +115,23 @@ A clickable grid of every question, coloured by answered / flagged / blank. Hand
 of a long paper — a candidate can see what is left and jump straight to it.
 """
 status_strip(a::Assessment) = _mount(a, "status", "status")
+
+"""
+    reset_button(a::Assessment) -> AssessWidget
+
+A visible control that clears identity, answers and the countdown, returning the paper to its opening
+state.
+
+**For authoring and demonstrating, not for a real sitting.** While writing a paper you run it over and
+over, and the persistence that makes the clock tamper-resistant for a candidate — the start stamp
+survives reloads, and re-opening the identity form does not clear it — otherwise leaves you locked out
+by an expired timer with no route back.
+
+Leaving it in a live paper gives a candidate nothing they did not already have (anyone who can open a
+console can clear the stored state), but it is noise on a real exam, so drop the cell before issuing
+one. The equivalent from the console is `SlateAssess.reset()`.
+"""
+reset_button(a::Assessment) = _mount(a, "reset", "reset")
 
 """
     submission_panel(a::Assessment) -> AssessWidget

@@ -55,7 +55,7 @@ using Random
 import JSON
 
 export Assessment, IdField, Marks, AnswerKey, questions,
-       exam_header, answer_box, status_strip, submission_panel, AssessWidget,
+       exam_header, answer_box, status_strip, submission_panel, reset_button, AssessWidget,
        Submission, Result, read_submission, verify, grade, report, item_analysis,
        sign_submission, hmac_sha256, canonical_message,
        answer_code, answer_label, ANSWER_NR, ANSWER_FLAG,

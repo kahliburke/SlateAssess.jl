@@ -57,8 +57,13 @@ there is nothing in the delivered file to extract. Marking happens afterwards, f
 - `title`, `subtitle` — shown in the fixed header.
 - `questions` — the question ids, in order (e.g. `["q01", …, "q50"]`). See [`questions`](@ref).
 - `choices` — the options offered per question (default `["a)", "b)", "c)", "d)", "e)"]`).
-- `no_response` — the value meaning *not answered*, always offered and always the default (`"NR"`).
+- `no_response` — the label for *not answered*, and always the recorded default (code `0`).
+- `show_no_response` — whether to offer it as an explicit option. `true` (default) lets a candidate
+  actively take an answer back, which matters on a long paper. `false` drops the control and leaves
+  "unanswered" as simply not having picked anything — simpler, but then a choice can't be undone.
+  Either way, unanswered records as `0` and reports as `no_response`.
 - `flag` — an optional "come back to this" marker. Recorded distinctly, but counts as unanswered.
+  Pass `flag = ""` to leave it out entirely.
 - `identity` — the [`IdField`](@ref)s a candidate fills in before the paper unlocks.
 - `marks` — the [`Marks`](@ref) scheme.
 - `duration` — optional wall-clock limit; the header counts down and locks the paper at zero.
@@ -73,6 +78,7 @@ struct Assessment
     questions::Vector{String}
     choices::Vector{String}
     no_response::String
+    show_no_response::Bool
     flag::String
     identity::Vector{IdField}
     marks::Marks
@@ -92,6 +98,7 @@ function Assessment(id::AbstractString;
                     questions::AbstractVector = String[],
                     choices::AbstractVector = ["a)", "b)", "c)", "d)", "e)"],
                     no_response::AbstractString = "NR",
+                    show_no_response::Bool = true,
                     flag::AbstractString = "🚩",
                     identity::AbstractVector{IdField} = DEFAULT_IDENTITY,
                     marks::Marks = Marks(),
@@ -104,8 +111,8 @@ function Assessment(id::AbstractString;
     dur = duration === nothing ? nothing : Int(duration)
     (dur !== nothing && dur <= 0) && throw(ArgumentError("`duration` must be positive, got $dur"))
     return Assessment(String(id), String(title), String(subtitle), qs,
-                      String[String(c) for c in choices], String(no_response), String(flag),
-                      collect(identity), marks, dur, String(session_key))
+                      String[String(c) for c in choices], String(no_response), show_no_response,
+                      String(flag), collect(identity), marks, dur, String(session_key))
 end
 
 """

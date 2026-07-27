@@ -74,9 +74,13 @@ function load_spec(path)
         println(stderr, "error: could not load spec $path")
         rethrow(e)
     end
-    isdefined(m, :exam) || usage("$path defines no `exam`")
-    isdefined(m, :key) || usage("$path defines no `key`")
-    return (getfield(m, :exam), getfield(m, :key))
+    # `invokelatest` is load-bearing on Julia 1.12+: `include` created these bindings in a NEWER world
+    # than this function is running in, so a plain `isdefined`/`getfield` here does not see them and the
+    # spec looks empty. (At the REPL it appears to work, because the world advances between statements.)
+    isdefined_ = (mod, s) -> Base.invokelatest(isdefined, mod, s)
+    isdefined_(m, :exam) || usage("$path defines no `exam`")
+    isdefined_(m, :key) || usage("$path defines no `key`")
+    return (Base.invokelatest(getfield, m, :exam), Base.invokelatest(getfield, m, :key))
 end
 
 function main(argv)

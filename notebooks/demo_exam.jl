@@ -20,19 +20,21 @@ The correct answers are not in this notebook, and so are not in the exported fil
 produce a signed submission; marking happens afterwards with `scripts/grade.jl`.
 """
 
-#%% code id=setup
+#%% code id=setup hidecode
 using SlateAssess
 using DataFrames, StatsBase
 
 "SlateAssess $(pkgversion(SlateAssess)) · DataFrames $(pkgversion(DataFrames))"
 
-#%% code id=examdef
+#%% code id=examdef hidecode
 # The paper. Note what is NOT here: the answer key. It lives only in the marking script.
 exam = Assessment("demo-macro-2026";
     title = "Macroeconomics — Sample Assessment",
-    subtitle = "5 questions · 20 minutes · each question 2 marks, −0.5 for a wrong answer",
-    questions = questions("q", 5),
+    subtitle = "6 questions · 20 minutes · each question 2 marks, −0.5 for a wrong answer",
+    questions = questions("q", 6),
     choices = ["a)", "b)", "c)", "d)"],
+    show_no_response = false,     # unanswered = nothing picked
+    flag = "",                    # no review-flag control
     marks = Marks(correct = 2.0, wrong = -0.5),
     duration = 20,
     identity = [
@@ -42,7 +44,7 @@ exam = Assessment("demo-macro-2026";
     ],
     session_key = "demo-session-key-2026")
 
-#%% code id=header
+#%% code id=header hidecode
 # Carries the runtime and the styling for every other widget — keep it first.
 exam_header(exam)
 
@@ -62,6 +64,10 @@ exam_header(exam)
 
 #%% code id=strip hidecode
 status_strip(exam)
+
+#%% code id=resetbtn hidecode
+# Authoring aid — drop this cell before issuing a real paper.
+reset_button(exam)
 
 #%% md id=q1txt
 @md"""
@@ -91,46 +97,63 @@ answer_box(exam, "q01")
 ---
 ### Question 2
 
-The chart below plots the unemployment rate against the inflation rate for the same economy.
-Hover a point to read its year. **Which period is most consistent with a stable short-run
-Phillips curve?**
+The chart below traces unemployment and inflation for the same economy, one connected path per
+period. Hover any point for its year.
 
-**a)** 2010–2013, where falling inflation accompanies rising unemployment
+**A stable short-run Phillips curve implies a downward-sloping trade-off: inflation falls as
+unemployment rises, with the curve itself staying put. Which period is most consistent with that?**
 
-**b)** 2014–2019, where inflation is broadly flat while unemployment falls steadily
-
-**c)** 2020–2022, where inflation rises sharply while unemployment falls
-
-**d)** 2022–2024, where inflation falls while unemployment also falls
+**a)** 2010–2013 $~~~~$ **b)** 2014–2019 $~~~~$ **c)** 2020–2022 $~~~~$ **d)** 2022–2024
 """
 
 #%% code id=q2chart hidecode
+# A Phillips-curve question is about MOVEMENT THROUGH TIME, so the figure has to show a trajectory,
+# not a cloud of points. Each candidate period is its own connected series, in chronological order,
+# so the shape of each era is directly comparable — and the legend lets a reader isolate one.
 years = 2010:2024
-unemp = [8.1, 9.4, 11.2, 12.8, 11.9, 10.4, 9.1, 8.0, 7.2, 6.7, 8.9, 7.4, 6.1, 5.8, 5.5]
-infl  = [1.4, 3.6, 2.8, 0.4, -0.3, 0.5, 0.6, 1.4, 1.0, 0.3, -0.1, 1.3, 7.8, 5.3, 2.4]
+unemp = [7.0, 8.6, 10.3, 12.0, 11.2, 10.1, 9.2, 8.4, 7.6, 6.9, 8.9, 7.4, 6.1, 5.8, 5.5]
+infl  = [3.4, 2.6,  1.7,  0.9,  1.0,  0.9, 1.1, 1.0, 1.2, 1.0, -0.2, 2.9, 7.8, 5.3, 2.4]
+
+at(y) = findfirst(==(y), years)
+# Each point is {value, name} — the NAME carries the year, which is what both the on-chart label and
+# the tooltip key off. An echart spec is serialised to JSON with no reviver, so a JS function formatter
+# would render as literal text, and the only tokens that actually resolve here are `{a}` (series),
+# `{b}` (item name) and `{c}` (the whole value). `{c0}`/`{c1}` and `{@dim}` do NOT — verified against
+# this ECharts build for both line and scatter — so the pair is labelled in words instead.
+period(lo, hi) = [Dict("value" => [unemp[at(y)], infl[at(y)]], "name" => string(y)) for y in lo:hi]
+
+# Periods overlap at their endpoints on purpose: the joint year is where one era hands over to the
+# next, and seeing it in both makes the turn legible.
+segments = [
+    ("2010–2013", period(2010, 2013), "#5fb3f9"),
+    ("2014–2019", period(2014, 2019), "#4ec9a0"),
+    ("2020–2022", period(2020, 2022), "#e0b341"),
+    ("2022–2024", period(2022, 2024), "#f2635f"),
+]
 
 echart(Dict(
-    "__size" => Dict("height" => 380),          # Slate extension: the chart div's height
-    # String templates only — an echart spec is serialised to JSON with no reviver, so a JS
-    # function formatter would render as literal text. `{@[n]}` indexes the data dimensions.
+    "__size" => Dict("height" => 460),
     "tooltip" => Dict("trigger" => "item",
-        "formatter" => "<b>{@[2]}</b><br/>Unemployment {@[0]}%<br/>Inflation {@[1]}%"),
-    "grid" => Dict("left" => 60, "right" => 30, "top" => 40, "bottom" => 50),
+        "formatter" => "<b>{b}</b> &nbsp;·&nbsp; {a}<br/>unemployment, inflation (%): <b>{c}</b>"),
+    "legend" => Dict("top" => 8, "data" => [s[1] for s in segments]),
+    "grid" => Dict("left" => 62, "right" => 34, "top" => 52, "bottom" => 56),
     "xAxis" => Dict("type" => "value", "name" => "Unemployment (%)", "nameLocation" => "middle",
-                    "nameGap" => 28),
+                    "nameGap" => 30, "min" => 4, "max" => 13,
+                    "splitLine" => Dict("show" => true)),
     "yAxis" => Dict("type" => "value", "name" => "Inflation (%)", "nameLocation" => "middle",
-                    "nameGap" => 38),
+                    "nameGap" => 40, "min" => -1, "max" => 9),
     "series" => [Dict(
-        "type" => "scatter",
-        "name" => "year",
-        "symbolSize" => 14,
-        "data" => [[u, i, string(y)] for (y, u, i) in zip(years, unemp, infl)],
-        "label" => Dict("show" => true, "position" => "top", "formatter" => "{@[2]}",
-                        "fontSize" => 12, "distance" => 7, "color" => "#c8cdd6"),
-        # Years cluster tightly in the middle of this scatter; without this the labels overprint
-        # each other into an illegible smudge. ECharts drops whichever would collide.
+        "type" => "line",              # line + symbol = a path you can trace, not a scatter cloud
+        "name" => name,
+        "data" => data,
+        "color" => colour,
+        "symbolSize" => 11,
+        "lineStyle" => Dict("width" => 2.5),
+        "label" => Dict("show" => true, "position" => "top", "formatter" => "{b}",
+                        "fontSize" => 11, "distance" => 8, "color" => "#c8cdd6"),
         "labelLayout" => Dict("hideOverlap" => true),
-    )],
+        "emphasis" => Dict("focus" => "series"),
+    ) for (name, data, colour) in segments],
 ))
 
 #%% code id=q2 hidecode
@@ -211,6 +234,118 @@ rather than tightening. **In the AD–AS framework, the most likely short-run co
 
 #%% code id=q5 hidecode
 answer_box(exam, "q05")
+
+#%% md id=q6txt
+@md"""
+---
+### Question 6
+
+The chart below shows **monthly** inflation over five years. A single sharp episode dominates it, and
+month-to-month noise makes the underlying trend hard to read.
+
+Use the slider to apply a **centred moving average** to the series. The faint line is the raw monthly
+data; the bold line is the smoothed series, and the dashed line marks 4%.
+
+**What is the smallest window that keeps the smoothed series at or below 4% throughout?**
+
+**a)** 3 months $~~~~$ **b)** 5 months $~~~~$ **c)** 7 months $~~~~$ **d)** 9 months
+"""
+
+#%% code id=q6data hidecode
+# Monthly inflation: a mild cyclical base plus one sharp episode. The episode is deliberately narrow
+# enough that a 7-month window pulls its peak under 4% while a 5-month window does not — so the
+# question has exactly one defensible answer and cannot be eyeballed from the raw series.
+months = collect(1:60)
+infl_monthly = let t = 1:60
+    base = 2.0 .+ 0.45 .* sin.(t ./ 3.2) .+ 0.25 .* cos.(t ./ 1.7)
+    round.(base .+ 4.5 .* exp.(-((t .- 31.0) .^ 2) ./ (2 * 1.1^2)); digits = 2)
+end
+"peak monthly inflation: $(maximum(infl_monthly))%"
+
+#%% web id=q6explore
+@web(html"""
+<div class="mx">
+  <div class="mx-bar">
+    <label class="mx-lab">Moving-average window
+      <input id="win" type="range" min="1" max="15" step="2" value="1" />
+    </label>
+    <span class="mx-out"><b id="winval">1</b> month<span id="plural"></span></span>
+    <span class="mx-out">peak of smoothed series <b id="peak">—</b></span>
+  </div>
+  <div id="mxchart"></div>
+</div>
+""",
+css"""
+.mx { margin: 6px 0 2px; }
+.mx-bar { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:6px;
+          font-size:.88rem; color:var(--dim,#9aa3b2); }
+.mx-lab { display:flex; align-items:center; gap:10px; }
+.mx-lab input { width:220px; accent-color:var(--accent,#5fb3f9); cursor:pointer; }
+.mx-out b { color:var(--text,#e6e6e6); font-variant-numeric:tabular-nums; }
+#mxchart { width:100%; height:400px; }
+""",
+js"""
+// Everything here runs in the browser. No Julia is involved once the page is built, so this works
+// identically in the live notebook and in the exported single-file paper, online or offline.
+const months = {{ months }};
+const raw = {{ infl_monthly }};
+
+const chart = echarts.init(root.querySelector("#mxchart"), "slate");
+
+// Centred moving average; the window shrinks at the ends rather than dropping points, so the line
+// spans the whole series instead of stopping short.
+function movingAverage(v, w) {
+  const half = (w - 1) / 2, out = [];
+  for (let i = 0; i < v.length; i++) {
+    const lo = Math.max(0, i - half), hi = Math.min(v.length - 1, i + half);
+    let sum = 0;
+    for (let j = lo; j <= hi; j++) sum += v[j];
+    out.push(+(sum / (hi - lo + 1)).toFixed(2));
+  }
+  return out;
+}
+
+function draw(w) {
+  const smoothed = movingAverage(raw, w);
+  const peak = Math.max.apply(null, smoothed);
+  root.querySelector("#winval").textContent = w;
+  root.querySelector("#plural").textContent = w === 1 ? "" : "s";
+  const peakEl = root.querySelector("#peak");
+  peakEl.textContent = peak.toFixed(2) + "%";
+  peakEl.style.color = peak > 4 ? "var(--red,#f2635f)" : "var(--green,#4ec9a0)";
+
+  chart.setOption({
+    animation: false,
+    grid: { left: 58, right: 26, top: 38, bottom: 46 },
+    tooltip: { trigger: "axis" },
+    legend: { top: 4, data: ["monthly", "smoothed"] },
+    xAxis: { type: "category", data: months, name: "month",
+             nameLocation: "middle", nameGap: 26,
+             axisLabel: { interval: 5 } },
+    yAxis: { type: "value", name: "inflation (%)", nameLocation: "middle",
+             nameGap: 40, min: 0, max: 7 },
+    series: [
+      { name: "monthly", type: "line", data: raw, showSymbol: false,
+        color: "#8892a4", lineStyle: { width: 1, opacity: 0.5 } },
+      { name: "smoothed", type: "line", data: smoothed, showSymbol: false,
+        color: "#5fb3f9", lineStyle: { width: 3 },
+        markLine: { silent: true, symbol: "none",
+          data: [{ yAxis: 4,
+                   lineStyle: { color: "#e0b341", type: "dashed", width: 1.5 },
+                   label: { formatter: "4%", position: "insideEndTop",
+                            color: "#e0b341" } }] } }
+    ]
+  });
+}
+
+const slider = root.querySelector("#win");
+slider.addEventListener("input", () => draw(+slider.value));
+window.addEventListener("resize", () => chart.resize());
+draw(+slider.value);
+""")
+
+#%% code id=q6 hidecode
+answer_box(exam, "q06")
 
 #%% md id=endtxt
 @md"""

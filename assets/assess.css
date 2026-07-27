@@ -109,6 +109,20 @@
 .sa-chip[data-status="flagged"]  { background: color-mix(in srgb, var(--sa-warn) 30%, transparent); color: var(--sa-fg); border-color: transparent; }
 .sa-chip[data-status="locked"]   { opacity: .45; cursor: default; }
 
+/* ── reset control (authoring aid) ────────────────────────────────────────── */
+.sa-reset { margin: 6px 0 14px; }
+.sa-resetbtn {
+  background: transparent;
+  color: var(--sa-dim);
+  border: 1px dashed var(--sa-line);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: .8rem;
+  cursor: pointer;
+}
+.sa-resetbtn:hover { border-color: var(--sa-accent); color: var(--sa-accent); border-style: solid; }
+@media print { .sa-reset { display: none !important; } }
+
 /* ── submission panel ─────────────────────────────────────────────────────── */
 .sa-submit {
   background: var(--sa-bg);

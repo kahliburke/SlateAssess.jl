@@ -30,7 +30,16 @@
    * one place this design is strictly better than a reactive-kernel notebook, where the answers live in
    * a server process the page can lose. Storage failures (private mode, a locked-down profile) are
    * swallowed — the paper still works, it just stops being crash-proof. */
-  function storeKey() { return "slateassess:" + (CFG ? CFG.id : "unknown"); }
+  function storeKey() {
+    var key = "slateassess:" + (CFG ? CFG.id : "unknown");
+    // A served paper has one URL per sitting, so the assessment id alone scopes it correctly. A paper
+    // opened as a LOCAL FILE does not: Chrome shares a single localStorage across every `file://` page,
+    // so two copies of the same paper sitting in different folders would share — and corrupt — each
+    // other's state. Scope by path there. The path is stable across reloads, so crash recovery, which
+    // is the whole reason this is persisted, still works.
+    if (location.protocol === "file:") key += ":" + location.pathname;
+    return key;
+  }
   function save() {
     try {
       localStorage.setItem(storeKey(), JSON.stringify({
@@ -48,6 +57,12 @@
       STATE.answers = d.answers || {};
       STATE.confirmed = !!d.confirmed;
       STATE.startedAt = d.startedAt || null;
+      // A start stamp only means anything once a candidate has actually confirmed and begun. Restoring
+      // one WITHOUT a confirmation would silently start — or, if it is old enough, immediately expire —
+      // a paper nobody has sat. That is not hypothetical: `file://` shares one localStorage across every
+      // local file in Chrome, and the key here is just the assessment id, so a stale stamp left by
+      // another copy of the same paper lands in a freshly opened one.
+      if (!STATE.confirmed) STATE.startedAt = null;
     } catch (e) { /* corrupt or unreadable — start fresh rather than fail to load */ }
   }
 
@@ -246,8 +261,12 @@
 
     // Real radios in a real fieldset: keyboard and screen-reader behaviour comes for free, and a
     // candidate using arrow keys or tab gets what they expect under exam pressure.
-    var all = CFG.choices.concat([CFG.no_response]);
-    if (CFG.flag) all = all.concat([CFG.flag]);
+    // "No response" and the review flag are both optional. Without the former, unanswered is simply
+    // nothing selected (the candidate cannot take an answer back); without the latter there is no
+    // flag control. Both still record the same way — 0 and -1 respectively.
+    var all = CFG.choices.slice();
+    if (CFG.show_no_response !== false) all.push(CFG.no_response);
+    if (CFG.flag) all.push(CFG.flag);
 
     all.forEach(function (choice) {
       var id = "sa-" + qid + "-" + choice.replace(/[^a-zA-Z0-9]/g, "_");
@@ -411,7 +430,13 @@
 
     // Countdown. Anchored to the FIRST confirm (persisted), so a reload doesn't hand back extra time.
     function tick() {
-      if (!CFG.duration || !STATE.startedAt) { clock.textContent = ""; return; }
+      // The clock is meaningless until the candidate has confirmed and started: no countdown, and in
+      // particular no way to reach "time is up" on a paper that was never begun.
+      if (!CFG.duration || !STATE.confirmed || !STATE.startedAt) {
+        clock.textContent = "";
+        clock.classList.remove("sa-clock-low", "sa-clock-out");
+        return;
+      }
       var end = new Date(STATE.startedAt).getTime() + CFG.duration * 60000;
       var left = end - Date.now();
       if (left <= 0) {
@@ -452,6 +477,26 @@
     }
     LISTENERS.status = draw;
     draw();
+  }
+
+  /* ── reset control (authoring aid) ─────────────────────────────────────────── */
+  // A visible button for `reset()`. Meant for writing and demonstrating a paper, where the countdown
+  // expiring — or state left behind by an earlier run — otherwise leaves you locked out with no route
+  // back. Leave it out of a real sitting; see `reset_button` in src/render.jl.
+  function mountReset(root) {
+    root.className = "sa-reset";
+    root.innerHTML = "";
+    var b = document.createElement("button");
+    b.className = "sa-resetbtn";
+    b.type = "button";
+    b.textContent = "↺ Reset paper";
+    b.title = "Clear identity, answers and the countdown, and start the paper over.";
+    b.addEventListener("click", function () {
+      API.reset();
+      b.textContent = "↺ Reset — done";
+      setTimeout(function () { b.textContent = "↺ Reset paper"; }, 1200);
+    });
+    root.appendChild(b);
   }
 
   /* ── submission ────────────────────────────────────────────────────────────── */
@@ -599,6 +644,7 @@
           else if (item[0] === "question") mountQuestion(item[1], item[2]);
           else if (item[0] === "status") mountStatus(item[1]);
           else if (item[0] === "submission") mountSubmission(item[1]);
+          else if (item[0] === "reset") mountReset(item[1]);
         } catch (e) {
           // One broken widget must never take the rest of the paper down with it.
           try {

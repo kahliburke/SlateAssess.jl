@@ -62,6 +62,28 @@ end
     # A `</script>` inside any injected content must not be able to close the tag early.
     tricky = Assessment("x</script><script>alert(1)</script>"; questions = ["q1"])
     @test !occursin("</script><script>alert", render_html(exam_header(tricky)))
+
+    r = render_html(reset_button(EXAM))
+    @test occursin("[\"reset\",el]", r)
+    @test length(r) < 600                                    # a mount stub, not another runtime copy
+end
+
+@testset "optional no-response and flag controls" begin
+    @test EXAM.show_no_response                              # offered by default
+    @test occursin("\"show_no_response\":true", render_html(exam_header(EXAM)))
+
+    bare = Assessment("bare"; questions = questions("q", 3), choices = ["a)", "b)"],
+                      show_no_response = false, flag = "", session_key = "k")
+    cfg = render_html(exam_header(bare))
+    @test occursin("\"show_no_response\":false", cfg)
+    @test occursin("\"flag\":\"\"", cfg)
+
+    # Dropping the controls must not change how an unanswered question is RECORDED — still 0, still
+    # reported under the no_response label — or old and new papers would grade differently.
+    @test answer_code(bare, nothing) == ANSWER_NR == 0
+    @test answer_label(bare, ANSWER_NR) == "NR"
+    msg = canonical_message(bare, Dict("number" => "1"), Dict("q01" => "b)"), "2026-01-01T00:00:00Z")
+    @test occursin("q01=2", msg) && occursin("q02=0", msg)
 end
 
 @testset "answer codes" begin

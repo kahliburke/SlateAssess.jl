@@ -3,3 +3,4 @@ Manifest.toml
 /submissions/
 *.cov
 .DS_Store
+demo/marks/
