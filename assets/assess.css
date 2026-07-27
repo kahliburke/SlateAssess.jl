@@ -1,0 +1,142 @@
+/* SlateAssess widget styling.
+ *
+ * Colours are taken from Slate's palette variables so a paper matches whatever theme the notebook or the
+ * exported page is using, with literal fallbacks for a page that has no Slate chrome at all. Everything
+ * is scoped under `.sa-*` — nothing here can reach the surrounding document.
+ *
+ * The visual priorities are the ones that matter under exam conditions: an unmistakable answered/blank
+ * distinction, targets big enough to hit without care, and a status that stays legible at a glance. */
+
+.sa-header, .sa-q, .sa-submit, .sa-status {
+  --sa-bg: var(--bg2, #1b1f27);
+  --sa-fg: var(--text, #e6e6e6);
+  --sa-dim: var(--dim, #9aa3b2);
+  --sa-line: var(--border, #333a47);
+  --sa-accent: var(--accent, #5fb3f9);
+  --sa-ok: var(--green, #4ec9a0);
+  --sa-bad: var(--red, #f2635f);
+  --sa-warn: var(--gold, #e0b341);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--sa-fg);
+  box-sizing: border-box;
+}
+.sa-header *, .sa-q *, .sa-submit *, .sa-status * { box-sizing: border-box; }
+
+/* ── header ───────────────────────────────────────────────────────────────── */
+.sa-header {
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 8px 0 18px;
+}
+.sa-title { font-size: 1.25rem; font-weight: 700; }
+.sa-subtitle { color: var(--sa-dim); font-size: .92rem; margin-top: 2px; }
+.sa-idform { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.sa-idfield { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--sa-dim); }
+.sa-idfield input {
+  background: var(--bg, #12151b);
+  color: var(--sa-fg);
+  border: 1px solid var(--sa-line);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: .95rem;
+  min-width: 220px;
+}
+.sa-idfield input:focus { outline: none; border-color: var(--sa-accent); }
+.sa-idfield input:disabled { opacity: .75; cursor: not-allowed; }
+.sa-iderr { color: var(--sa-warn); font-size: .8rem; min-height: 1.1em; margin-top: 6px; }
+
+.sa-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.sa-header button, .sa-submit button {
+  background: var(--sa-accent);
+  color: #07121d;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sa-header button:disabled, .sa-submit button:disabled {
+  background: var(--sa-line); color: var(--sa-dim); cursor: not-allowed;
+}
+.sa-header[data-confirmed="1"] .sa-confirm { background: transparent; color: var(--sa-dim); border: 1px solid var(--sa-line); }
+.sa-tally { color: var(--sa-dim); font-size: .85rem; }
+.sa-clock { margin-left: auto; font-variant-numeric: tabular-nums; font-size: .95rem; color: var(--sa-dim); }
+.sa-clock-low { color: var(--sa-warn); font-weight: 700; }
+.sa-clock-out { color: var(--sa-bad); font-weight: 700; }
+
+/* ── a question's answer row ──────────────────────────────────────────────── */
+.sa-q { margin: 10px 0 22px; }
+.sa-q-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sa-q-badge { font-size: 1.15rem; width: 1.5em; text-align: center; }
+.sa-q-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.sa-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--sa-line);
+  border-radius: 9px;
+  padding: 7px 13px;
+  cursor: pointer;
+  font-size: .95rem;
+  user-select: none;
+  background: var(--sa-bg);
+  transition: border-color .12s, background .12s;
+}
+.sa-opt:hover { border-color: var(--sa-accent); }
+.sa-opt input { accent-color: var(--sa-accent); cursor: pointer; margin: 0; }
+.sa-opt:has(input:checked) { border-color: var(--sa-accent); background: color-mix(in srgb, var(--sa-accent) 16%, transparent); }
+.sa-opt:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.sa-opt-nr:has(input:checked) { border-color: var(--sa-dim); background: color-mix(in srgb, var(--sa-dim) 14%, transparent); }
+.sa-opt-flag:has(input:checked) { border-color: var(--sa-warn); background: color-mix(in srgb, var(--sa-warn) 16%, transparent); }
+.sa-q[data-status="answered"] .sa-q-badge { color: var(--sa-ok); }
+.sa-q[data-status="blank"] .sa-q-badge { opacity: .65; }
+
+/* ── status strip ─────────────────────────────────────────────────────────── */
+.sa-status { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 18px; }
+.sa-chip {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--sa-line);
+  background: var(--sa-bg);
+  color: var(--sa-dim);
+  font-size: .76rem;
+  cursor: pointer;
+  padding: 0;
+}
+.sa-chip:hover { border-color: var(--sa-accent); color: var(--sa-fg); }
+.sa-chip[data-status="answered"] { background: color-mix(in srgb, var(--sa-ok) 26%, transparent); color: var(--sa-fg); border-color: transparent; }
+.sa-chip[data-status="flagged"]  { background: color-mix(in srgb, var(--sa-warn) 30%, transparent); color: var(--sa-fg); border-color: transparent; }
+.sa-chip[data-status="locked"]   { opacity: .45; cursor: default; }
+
+/* ── submission panel ─────────────────────────────────────────────────────── */
+.sa-submit {
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 22px 0;
+}
+.sa-summary { font-size: .95rem; }
+.sa-warn { color: var(--sa-warn); font-size: .85rem; margin-top: 6px; }
+.sa-ok { color: var(--sa-ok); font-size: .88rem; margin-bottom: 10px; }
+.sa-csv {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--bg, #12151b);
+  color: var(--sa-fg);
+  border: 1px solid var(--sa-line);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: .74rem;
+  resize: vertical;
+}
+.sa-err { color: var(--sa-bad); font-size: .85rem; }
+
+@media print {
+  /* A printed paper is a record of the questions, not a form: drop the controls that mean nothing on
+     paper but keep each question's recorded answer visible. */
+  .sa-status, .sa-submit .sa-actions, .sa-header .sa-actions, .sa-csv { display: none !important; }
+  .sa-opt:not(:has(input:checked)) { opacity: .35; }
+}

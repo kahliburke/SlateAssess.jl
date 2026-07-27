@@ -1,0 +1,5 @@
+Manifest.toml
+/marks/
+/submissions/
+*.cov
+.DS_Store
