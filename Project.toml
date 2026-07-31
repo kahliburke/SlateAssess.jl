@@ -14,10 +14,6 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 SlatePlotly = "141e1fc3-13f6-4de8-b22a-97670e9194c6"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
-# SlatePlotly is not registered yet — resolved from a sibling checkout, as Slate itself is.
-[sources]
-SlatePlotly = {path = "../SlatePlotly.jl"}
-
 [compat]
 DataFrames = "1.8.2"
 JSON = "0.21, 1"
