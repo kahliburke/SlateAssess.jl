@@ -101,7 +101,11 @@ of the two the table below can follow once no Julia is left behind the page.
 """
 
 #%% code id=aggregates
-using Printf
+# `Statistics` belongs here, with the aggregates, and not in the summary table further down that first
+# needed it. `median` is called by cells ABOVE that one, and a name arrives through the dependency
+# graph: importing it late leaves every earlier reader with nothing to depend on, so whether they work
+# comes down to whether the worker happens to be warm from a previous run.
+using Printf, Statistics
 
 # Every axis is fixed up front, from the whole dataset instead of the filtered slice. That keeps the
 # aggregates below the same length for every control position, which is the condition `@replay`
@@ -612,8 +616,6 @@ LATAM leads on revenue and lands last on gross profit; the margin column is wher
 """
 
 #%% code id=table_pivot
-using Statistics
-
 summary_rows = map(REGIONS) do reg
     rs = filter(o -> o.region == reg, ORDERS)
     (region = reg, orders = length(rs), revenue = total(rs),
