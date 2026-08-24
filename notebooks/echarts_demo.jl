@@ -65,12 +65,20 @@ chart has focus its border lights up and the wheel zooms the x range.
 #%% code id=wbind
 @bind w Slider(1:1:15; label = "Moving-average window")
 
+#%% code id=435b49
+
+#%% code id=e24656
+
 #%% code id=fig_bound controls=w
 echart(series(:line, xs, infl; name = "monthly", lineStyle = (width = 1, opacity = 0.45), symbol = "none"),
        series(:line, xs, @replay(w, movavg(infl, w)); name = "smoothed", lineStyle = (width = 3,), symbol = "none");
        title = "Centred moving average",
        height = 420,
        legend = true,
+       # A reactive chart re-`setOption`s with a 300 ms transition by default, which reads well on an
+       # occasional change and badly under a drag: every step starts another morph, so the line is
+       # permanently mid-animation and trails the thumb. `animation = false` snaps instead.
+       animation = false,
        xAxis = (name = "month",),
        yAxis = (name = "inflation (%)", min = 0, max = 7),
        dataZoom = [(type = :inside,)])
@@ -132,8 +140,12 @@ echart(series(:line, big_x, big_y; name = "raw", lineStyle = (width = 0.7, opaci
        title = "2 000 points × 100 slider positions",
        height = 400,
        legend = true,
+       animation = false,
        xAxis = (name = "t",),
-       yAxis = (name = "level",),
+       # Pinned to the RAW series' range, which the smoothed one can never leave. Without this the
+       # axis refits on every slider step — and an axis relabelling under your hand reads as the
+       # chart redrawing even when the data is only sliding.
+       yAxis = (name = "level", min = floor(minimum(big_y)) - 2, max = ceil(maximum(big_y)) + 2),
        dataZoom = [(type = :inside,)])
 
 #%% md id=closing

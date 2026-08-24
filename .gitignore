@@ -4,3 +4,6 @@ Manifest.toml
 *.cov
 .DS_Store
 demo/marks/
+
+# Generated standalone exports — multi-MB HTML artifacts, rebuilt on demand
+exports/
