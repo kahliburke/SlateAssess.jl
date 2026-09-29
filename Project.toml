@@ -1,6 +1,6 @@
 name = "SlateAssess"
 uuid = "4293ad4b-9d1e-41b5-a698-562d6dfeffbe"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kahli Burke <kahli@kahliburke.com>"]
 
 [deps]
@@ -19,6 +19,7 @@ DataFrames = "1.8.2"
 JSON = "0.21, 1"
 PlotlyBase = "0.8.23"
 PlotlyJS = "0.18.18"
+SlatePlotly = "0.1"
 StatsBase = "0.34.12"
 julia = "1.10"
 
